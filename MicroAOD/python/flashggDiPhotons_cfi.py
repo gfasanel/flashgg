@@ -10,6 +10,7 @@ flashggDiPhotons = cms.EDProducer('FlashggDiPhotonProducer',
                                   ConversionTagSingleLeg = cms.InputTag("reducedEgamma","reducedSingleLegConversions"),
                                   beamSpotTag            = cms.InputTag( "offlineBeamSpot" ),
                                   GenParticleTag         = cms.InputTag( "flashggPrunedGenParticles" ),
+                                  reProcess              = cms.bool(False),
 
                                   ##Parameters for Legacy Vertex Selector                                                
                                   #vtxId 2012
@@ -27,7 +28,7 @@ flashggDiPhotons = cms.EDProducer('FlashggDiPhotonProducer',
                                   vertexProbMVAweightfile = cms.FileInPath("flashgg/MicroAOD/data/TMVAClassification_BDTVtxProb_SL_2015.xml"),
                                   useSingleLeg            = cms.bool(True),
 
-                                  nVtxSaveInfo            = cms.untracked.uint32(3),
+                                  nVtxSaveInfo            = cms.untracked.int32(-1),
                                   trackHighPurity         = cms.bool(False),
                                   dRexclude               = cms.double(0.05),
                                   #new reso:
@@ -57,3 +58,17 @@ flashggDiPhotons = cms.EDProducer('FlashggDiPhotonProducer',
                                   singlelegsigma2Tec      = cms.double(1.56638),
                                   MaxJetCollections       = cms.uint32(maxJetCollections)
                                   )
+
+# allow to reproduce DiPhotons from microAOD (no EGamma collection available)
+flashggDiPhotonsLite = cms.EDProducer('FlashggDiPhotonProducer',
+                                      PhotonTag              = cms.InputTag('flashggRandomizedPhotons'),
+                                      VertexTag              = cms.InputTag('offlineSlimmedPrimaryVertices'),
+                                      VertexSelectorName     = cms.string("FlashggLegacyVertexSelector"),
+                                      VertexCandidateMapTag  = cms.InputTag("flashggVertexMapUnique"),
+                                      ConversionTag          = cms.InputTag("reducedEgamma","reducedConversions"),
+                                      ConversionTagSingleLeg = cms.InputTag("reducedEgamma","reducedSingleLegConversions"),
+                                      beamSpotTag            = cms.InputTag( "offlineBeamSpot" ),
+                                      GenParticleTag         = cms.InputTag( "flashggPrunedGenParticles" ),
+                                      MaxJetCollections      = cms.uint32(maxJetCollections),
+                                      reProcess              = cms.bool(True)
+                                      )
