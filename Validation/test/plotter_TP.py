@@ -1,10 +1,14 @@
 from ROOT import *
+import sys
 gROOT.SetBatch(kTRUE)
 gSystem.Load("~/rootlogon_C.so")
-ROOT.rootlogon()
+rootlogon()
+ratio=1
 
 import os
 
+#pu_weights_file=TFile("pu_weights_0T.root")
+#pu_weights=pu_weights_file.Get("pu_weights")
 variables=['probe_Pho_sipip',
            'probe_Pho_sieie',
            'probe_Pho_nTrkSolidCone03',
@@ -20,31 +24,42 @@ variables=['probe_Pho_sipip',
            'tag_Pho_e',              
            'tag_Pho_et',             
            'pair_mass',              
-           'mass'           
+           'mass',           
+           'event_nPV',
+           'PUweight',
+           'truePU'
            ]
 
-#variables=['probe_Pho_sipip'] #just to test one variable
-variables=['mass'] #just to test one variable
+#variables=['probe_Pho_sipip','probe_Pho_sieie'] #just to test one variable
+#variables=['probe_Pho_sieie']
+#variables=['probe_Pho_missingHits']
+#variables=['probe_Pho_full5x5x_r9','probe_Pho_nTrkSolidCone03']
+#variables=['mass'] #just to test one variable
+#variables=['event_nPV']
+variables=['truePU']
+
 
 hist={}
 hist['probe_Pho_sipip'          ]=dict(name='#sigma_{i#phi i#phi}'     ,unit=''     ,bins=100,xmin=0.,xmax=0.05) 
-hist['probe_Pho_sieie'          ]=dict(name='probe_Pho_sieie'          ,unit=''     ,bins=400,xmin=0.,xmax=0.05) 
+hist['probe_Pho_sieie'          ]=dict(name='probe_Pho_sieie'          ,unit=''     ,bins=100,xmin=0.,xmax=0.05) 
 hist['probe_Pho_nTrkSolidCone03']=dict(name='probe_Pho_nTrkSolidCone03',unit=''     ,bins=5,xmin=0.,xmax=5) 
 hist['probe_Pho_egPhotonIso'    ]=dict(name='probe_Pho_egPhotonIso'    ,unit=''     ,bins=100,xmin=0.,xmax=5) 
 hist['probe_Pho_abseta'         ]=dict(name='probe_Pho_abseta'         ,unit=''     ,bins=100,xmin=0.,xmax=5) 
 hist['probe_Pho_e'              ]=dict(name='probe_Pho_e'              ,unit='[GeV]',bins=150,xmin=0.,xmax=300) 
 hist['probe_Pho_et'             ]=dict(name='probe_Pho_et'             ,unit='[GeV]',bins=100,xmin=0.,xmax=200) 
 hist['probe_Pho_eta'            ]=dict(name='probe_Pho_eta'            ,unit=''     ,bins=100,xmin=-3,xmax=3) 
-hist['probe_Pho_full5x5x_r9'    ]=dict(name='probe_Pho_full5x5x_r9'    ,unit=''     ,bins=400,xmin=0.,xmax=1) 
+hist['probe_Pho_full5x5x_r9'    ]=dict(name='probe_Pho_full5x5x_r9'    ,unit=''     ,bins=80,xmin=0.8,xmax=1) 
 hist['probe_Pho_hoe'            ]=dict(name='probe_Pho_hoe'            ,unit=''     ,bins=100,xmin=0.,xmax=0.1) 
 hist['probe_Pho_missingHits'    ]=dict(name='probe_Pho_missingHits'    ,unit=''     ,bins=5,xmin=0.,xmax=5) 
 hist['tag_Pho_abseta'           ]=dict(name='tag_Pho_abseta'           ,unit=''     ,bins=100,xmin=0.,xmax=3) 
 hist['tag_Pho_e'                ]=dict(name='tag_Pho_e'                ,unit='[GeV]',bins=100,xmin=0.,xmax=200) 
 hist['tag_Pho_et'               ]=dict(name='tag_Pho_et'               ,unit='[GeV]',bins=100,xmin=0.,xmax=200) 
-hist['pair_mass'                ]=dict(name='pair_mass'                ,unit='[GeV]',bins=60,xmin=70.,xmax=110) 
-hist['mass'                     ]=dict(name='mass'                     ,unit='[GeV]',bins=60,xmin=70.,xmax=110) 
+hist['pair_mass'                ]=dict(name='pair_mass'                ,unit='[GeV]',bins=80,xmin=70.,xmax=110) 
+hist['mass'                     ]=dict(name='mass'                     ,unit='[GeV]',bins=80,xmin=70.,xmax=110) 
+hist['event_nPV'                ]=dict(name='nPV'                      ,unit=''     ,bins=20,xmin=0.,xmax=20) 
+hist['PUweight'                 ]=dict(name='PUweight'                 ,unit=''     ,bins=40,xmin=0.,xmax=4) 
+hist['truePU'                   ]=dict(name='truePU  '                 ,unit=''     ,bins=52,xmin=0.,xmax=52) 
 
-#( isEB && full5x5_sigmaIetaIeta < 1.05e-2 && sqrt(sipip)< 1.05e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 )
 #file_MC=TFile('tp_ntuples/DYToEE_NNPDF30_powheg.root')
 file_MC=TFile('tp_ntuples/DYToEE_NNPDF30_powheg_76_v2.root')
 tree_MC=file_MC.Get("PhotonToRECO/fitter_tree")
@@ -67,19 +82,21 @@ eb_ee="(("+probe_barrel+"&&"+tag_endcap+") || ("+probe_endcap+"&&"+tag_barrel+")
 #ele_sel="passingEleSel"
 ele_sel="(probe_Pho_missingHits>=0)&&(probe_Pho_missingHits<=1)"
 
+presel="(probe_Pho_full5x5x_r9>0.8)&&(probe_Pho_hoe<0.1)&&(probe_Pho_egPhotonIso<5)&&(probe_Pho_nTrkSolidCone03<5)"
 ############################################
 selection_bb=eb_eb+"&&"+mass_cut
 selection_be=eb_ee+"&&"+mass_cut
 selection_bb_ele=selection_bb+"&&"+ele_sel
 selection_be_ele=selection_be+"&&"+ele_sel
 ############################################
-selection_barrel=probe_barrel+"&&"+mass_cut
-selection_barrel_ele=selection_barrel+"&&"+ele_sel
-selection_endcap=probe_endcap #+"&&"+mass_cut
-selection_endcap_ele=selection_endcap+"&&"+ele_sel
+selection_barrel=presel+"&&"+probe_barrel+"&&"+mass_cut
+selection_barrel_ele=presel+"&&"+selection_barrel+"&&"+ele_sel
+selection_endcap=presel+"&&"+probe_endcap+"&&"+mass_cut
+selection_endcap_ele=presel+"&&"+selection_endcap+"&&"+ele_sel
 
 #sel_names=['bb','be','bb_ele','be_ele']
-sel_names=['barrel','endcap','barrel_ele','endcap_ele']
+#sel_names=['barrel','endcap','barrel_ele','endcap_ele']
+sel_names=['barrel_ele','endcap_ele']
 selection={}
 ##########################################
 selection['bb']=selection_bb
@@ -103,11 +120,17 @@ y_factor={}
 y_factor['lin']=1.2
 y_factor['log']=10
 
+
+###My testing plots#######################
+print "Entries in MC are ",tree_MC.GetEntries()
+tree_MC.SetBranchAddress(
+
+
 for variable in variables:
    print "[INFO] Plotting ",variable
    for sel_name in sel_names:
       print "[INFO] Sel name ",sel_name 
-      print "[INFo] Corresponding selection is ",selection[sel_name]
+      print "[INFO] Corresponding selection is ",selection[sel_name]
       for y_scale in y_scales:
          canvas=TCanvas()
          scale=y_factor[y_scale]
@@ -126,18 +149,26 @@ for variable in variables:
          pad1.cd();
          h_MC=TH1F("h_MC","h_MC_"+selection[sel_name]+"_"+variable,hist[variable]['bins'],hist[variable]['xmin'],hist[variable]['xmax'])
          h_data=TH1F("h_data","h_data_"+selection[sel_name]+"_"+variable,hist[variable]['bins'],hist[variable]['xmin'],hist[variable]['xmax'])
-         tree_MC.Draw(variable+">>h_MC",selection[sel_name]+"&&"+mass_cut)
-         if sel_name in ('endcap','endcap_ele') :
-            tree_data.Draw(variable+">>h_data",selection[sel_name]+"&&"+extra_mass_cut) 
-         else:
-            tree_data.Draw(variable+">>h_data",selection[sel_name]+"&&"+mass_cut) 
+         h_MC.Sumw2()
+         h_data.Sumw2()
+         #if(variable=='PUweight'):
+         #   tree_MC.Draw("("+selection[sel_name]+"&&"+mass_cut+")*(PUweight)>>h_MC")
+         #   #tree_MC.Draw(selection[sel_name]+"&&"+mass_cut+">>h_MC")
+         #   canvas.SaveAs("~/scratch1/www/TP/76/data_MC/"+variable+"_"+sel_name+"_"+y_scale+".png")
+         #   sys.exit()            
+         #else:
+         #tree_MC.Draw(variable+">>h_MC","("+selection[sel_name]+"&&"+mass_cut+")*(PUweight)")
+         tree_MC.Draw(variable+">>h_MC","("+selection[sel_name]+"&&"+mass_cut+")")
+
+         #if sel_name in ('endcap','endcap_ele') :
+            #tree_data.Draw(variable+">>h_data",selection[sel_name]+"&&"+extra_mass_cut) 
+         #else:
+         tree_data.Draw(variable+">>h_data",selection[sel_name]+"&&"+mass_cut) 
          if y_scale!='lin':
             print "[INFO] Setting log scale"
             canvas.cd(1)
             gPad.SetLogy(1)
             h_MC.SetMinimum(0.0001)
-         h_MC.Sumw2()
-         h_data.Sumw2()
          h_MC.GetYaxis().SetTitle("Normalized events")
          h_MC.SetLineColor(kRed)
          h_MC.SetFillColor(kRed)
@@ -151,7 +182,10 @@ for variable in variables:
          h_MC.Draw("hist")
          h_data.SetMarkerSize(0.8)
          h_data.Draw("psame")
-         legend=TLegend(0.6,0.6,0.8,0.8)
+         if(variable=='probe_Pho_full5x5x_r9'):
+            legend=TLegend(0.2,0.55,0.4,0.75)
+         else:
+            legend=TLegend(0.6,0.6,0.8,0.8)
          legend.SetBorderSize(0)
          legend.SetFillColor(0);
          legend.SetFillStyle(1001);
@@ -169,32 +203,33 @@ for variable in variables:
             label_region.SetNDC()
             label_region.Draw()
 
-         
-         pad2.cd();
-         sRatio = h_data.Clone("sRatio");
-         sRatio.Divide(h_MC);
-         sRatio.Draw();
-         ratioGraph = TGraphErrors(sRatio);
-         ratioGraph.SetMarkerColor(kBlack);
-         ratioGraph.SetMarkerStyle(20);
-         ratioGraph.SetMarkerSize(0.7);
-         ratioGraph.Draw("AP");
-         ratioGraph.GetXaxis().SetRangeUser(h_MC.GetXaxis().GetXmin(),h_MC.GetXaxis().GetXmax());
+         if(ratio):
+            pad2.cd();
+            sRatio = h_data.Clone("sRatio");
+            sRatio.Divide(h_MC);
+            sRatio.Draw();
+            ratioGraph = TGraphErrors(sRatio);
+            ratioGraph.SetMarkerColor(kBlack);
+            ratioGraph.SetMarkerStyle(20);
+            ratioGraph.SetMarkerSize(0.7);
+            ratioGraph.Draw("AP");
+            ratioGraph.GetXaxis().SetRangeUser(h_MC.GetXaxis().GetXmin(),h_MC.GetXaxis().GetXmax());
       #ratioGraph.GetXaxis().SetTitle(mc.GetXaxis().GetTitle());
-         ratioGraph.GetYaxis().SetTitle("Data/MC");
-         ratioGraph.GetYaxis().SetTitleSize(sRatio.GetYaxis().GetTitleSize()*yscale);
-         ratioGraph.GetYaxis().SetTitleOffset(0.3);
-         ratioGraph.GetYaxis().SetLabelSize(sRatio.GetYaxis().GetLabelSize()*yscale);
-         ratioGraph.GetYaxis().SetLabelOffset(sRatio.GetYaxis().GetLabelOffset()*yscale);
-         ratioGraph.GetXaxis().SetTitleSize(sRatio.GetYaxis().GetTitleSize() *yscale   );
-         ratioGraph.GetXaxis().SetTitleOffset(0.92);
-         ratioGraph.GetXaxis().SetLabelSize(sRatio.GetYaxis().GetLabelSize() *yscale   );
-         ratioGraph.GetXaxis().SetLabelOffset(sRatio.GetYaxis().GetLabelOffset());
-         ratioGraph.GetXaxis().SetTitle(hist[variable]['name']+hist[variable]['unit'])
+            ratioGraph.GetYaxis().SetTitle("Data/MC");
+            ratioGraph.GetYaxis().SetTitleSize(sRatio.GetYaxis().GetTitleSize()*yscale);
+            ratioGraph.GetYaxis().SetTitleOffset(0.3);
+            ratioGraph.GetYaxis().SetLabelSize(sRatio.GetYaxis().GetLabelSize()*yscale);
+            ratioGraph.GetYaxis().SetLabelOffset(sRatio.GetYaxis().GetLabelOffset()*yscale);
+            ratioGraph.GetXaxis().SetTitleSize(sRatio.GetYaxis().GetTitleSize() *yscale   );
+            ratioGraph.GetXaxis().SetTitleOffset(0.92);
+            ratioGraph.GetXaxis().SetLabelSize(sRatio.GetYaxis().GetLabelSize() *yscale   );
+            ratioGraph.GetXaxis().SetLabelOffset(sRatio.GetYaxis().GetLabelOffset());
+            ratioGraph.GetXaxis().SetTitle(hist[variable]['name']+hist[variable]['unit'])
       #ratioGraph.GetYaxis().SetRangeUser(1- 2*ratioGraph.GetRMS(2),1+2*ratioGraph.GetRMS(2));
-         ratioGraph.GetYaxis().SetRangeUser(0.2,4);
-         ratioGraph.GetYaxis().SetNdivisions(5);
+         #ratioGraph.GetYaxis().SetRangeUser(0.2,4);
+            ratioGraph.GetYaxis().SetRangeUser(0.5,2);
+            ratioGraph.GetYaxis().SetNdivisions(5);
 
          
-         canvas.SaveAs("~/scratch1/www/TP/76/data_MC/"+variable+"_"+sel_name+"_"+y_scale+".png")
+            canvas.SaveAs("~/scratch1/www/TP/76/data_MC/"+variable+"_"+sel_name+"_"+y_scale+".png")
       

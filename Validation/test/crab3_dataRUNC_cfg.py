@@ -1,14 +1,13 @@
 from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 config = config()
 
-config.General.requestName = 'flashgg_TP_data'
+config.General.requestName = 'flashgg_TP_data_RUNC'
 config.General.workArea = 'crab_data_TP_76'
 config.General.transferOutputs = True
 config.General.transferLogs = False
 
 config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = 'makeTreePhotons_0T.py'
-#config.Data.inputDataset = '/SingleElectron_0T/gfasanel-0T_76-1_1_0-v0-Run2015D-27Jan2016-v2-7e516a39f82db69021bdfacbf5667a6f/USER'
 config.Data.inputDataset = '/SingleElectron_0T/gfasanel-0T_76-1_1_0-v0-Run2015C_25ns-27Jan2016-v2-7e516a39f82db69021bdfacbf5667a6f/USER'
 #config.Data.inputDBS = 'global'
 config.Data.inputDBS = 'phys03'

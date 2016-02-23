@@ -43,7 +43,7 @@ print "PROBE SELECTION: "+options['PHOTON_CUTS']
 options['MAXEVENTS']             = cms.untracked.int32(-1) 
 options['useAOD']                = cms.bool(False)
 options['OUTPUTEDMFILENAME']     = 'edmFile.root'
-options['DEBUG']                 = cms.bool(True)
+options['DEBUG']                 = cms.bool(False)
 
 from flashgg.Validation.treeMakerOptionsPhotons_0T_cfi import *
 
@@ -60,7 +60,9 @@ if (varOptions.isMC):
     options['EVENTSToPROCESS']       = cms.untracked.VEventRange()
     options['MAXEVENTS']             = cms.untracked.int32(10000) 
 else:
-    options['INPUT_FILE_NAME']       = ("file:/tmp/meridian/SingleEleMicroAOD.root")
+    #options['INPUT_FILE_NAME']       = ("file:/tmp/meridian/SingleEleMicroAOD.root")
+    ##root://xrootd-cms.infn.it//
+    options['INPUT_FILE_NAME']       = ("root://xrootd-cms.infn.it//store/group/phys_higgs/cmshgg/gfasanel/flashgg/SingleEle_0T/1_1_0/SingleElectron_0T/SingleEle_0T-1_1_0-v0-Run2015D-PromptReco-v4/160205_091733/0000/myMicroAODOutputFile_1.root")
     options['OUTPUT_FILE_NAME']      = "TnPTree_data.root"
     options['TnPPATHS']              = ["HLT_Ele27_eta2p1_WPLoose_Gsf_v*"]
     options['TnPHLTTagFilters']      = cms.vstring("hltEle27WPLooseGsfTrackIsoFilter")
