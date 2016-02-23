@@ -23,7 +23,7 @@ photonID_0T = """
 (
 ( isEB && full5x5_sigmaIetaIeta < 1.05e-2 && sqrt(sipip)< 1.05e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 ) 
 ||
-( isEE && full5x5_sigmaIetaIeta < 2.8e-2 && sqrt(sipip)< 2.6e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 )
+( isEE && full5x5_sigmaIetaIeta < 2.8e-2 && sqrt(sipip)< 2.8e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 )
 )
 """
 
@@ -32,12 +32,13 @@ electron_0T="(matchedGsfTrackInnerMissingHits>=0 && matchedGsfTrackInnerMissingH
 
 options['PHOTON_COLL']           = "flashggRandomizedPhotons"
 options['DIPHOTON_COLL']         = "flashggDiPhotons"
-options['PHOTON_CUTS']           = "(abs(superCluster.eta)<2.5) && !(1.4442<=abs(superCluster.eta)<=1.566) && ((superCluster.energy*sin(superCluster.position.theta))>25.0)"
+options['PHOTON_CUTS']           = "(abs(superCluster.eta)<2.5) && !(1.4442<=abs(superCluster.eta)<=1.566) && ((superCluster.energy*sin(superCluster.position.theta))>10.0)"
 options['PHOTON_SEL_CUTS']           = options['PHOTON_CUTS'] + " && "+ photonID_0T
+options['PHOTON_SEL_ELE_VETO_CUTS']  = options['PHOTON_CUTS'] + " && !" + electron_0T
 options['PHOTON_SEL_ELE_CUTS']           = options['PHOTON_SEL_CUTS'] + " && " + electron_0T
-options['PHOTON_TAG_CUTS']       = options['PHOTON_CUTS'] + "&& (superCluster.energy*sin(superCluster.position.theta)>30.0)" + " && "+ photonID_0T+ " && " + electron_0T
+options['ELE_TAG_CUTS']       = options['PHOTON_CUTS'] + "&& (superCluster.energy*sin(superCluster.position.theta)>20.0)" + " && "+ photonID_0T+ " && " + electron_0T
 
-print "TAG SELECTION: "+options['PHOTON_TAG_CUTS']
+print "TAG SELECTION: "+options['ELE_TAG_CUTS']
 print "PROBE SELECTION: "+options['PHOTON_CUTS']
 
 options['MAXEVENTS']             = cms.untracked.int32(-1) 
@@ -45,7 +46,7 @@ options['useAOD']                = cms.bool(False)
 options['OUTPUTEDMFILENAME']     = 'edmFile.root'
 options['DEBUG']                 = cms.bool(True)
 
-from flashgg.Validation.treeMakerOptionsPhotons_0T_cfi import *
+from flashgg.Validation.treeMakerOptionsPhotons_0T_Zeeg_cfi import *
 
 if (varOptions.isMC):
     options['INPUT_FILE_NAME']       = ("/store/user/spigazzi/flashgg/diphotons0T_v1/1_2_0-64-gbd0a265/DYToEE_NNPDF30_13TeV-powheg-pythia8/diphotons0T_v1-1_2_0-64-gbd0a265-v0-RunIISpring15DR74-0TPU25nsData2015v1_magnetOffBS0T_74X_mcRun2_0T_v0-v2/160127_134011/0000/myMicroAODOutputFile_250.root")
@@ -72,7 +73,7 @@ else:
 ###################################################################
 
 setModules(process, options)
-from flashgg.Validation.treeContentPhotons_0T_cfi import *
+from flashgg.Validation.treeContentPhotons_0T_Zeeg_cfi import *
 
 process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
 process.load("Configuration.Geometry.GeometryRecoDB_cff")
@@ -97,8 +98,8 @@ process.maxEvents = cms.untracked.PSet( input = options['MAXEVENTS'])
 ## ID
 ###################################################################
 
-from PhysicsTools.TagAndProbe.photonIDModules_cfi import *
-setIDs(process, options)
+#from PhysicsTools.TagAndProbe.photonIDModules_cfi import *
+#setIDs(process, options)
 
 ###################################################################
 ## PILE-UP
@@ -115,14 +116,15 @@ from PhysicsTools.TagAndProbe.photonIDModules_cfi import *
 ## SEQUENCES
 ###################################################################
 
-process.egmPhotonIDs.physicsObjectSrc = cms.InputTag("photonFromDiPhotons")
+#process.egmPhotonIDs.physicsObjectSrc = cms.InputTag("photonFromDiPhotons")
 
 process.pho_sequence = cms.Sequence(
-    process.goodPhotonTags +
+    process.goodEleTags +
     process.goodPhotonProbes +
     process.goodPhotonProbesSelection +
     process.goodPhotonProbesEleSelection +
-    process.goodPhotonsTagHLT +
+    process.goodPhotonProbesEleVetoSelection +
+    process.goodEleTagHLT +
     process.goodPhotonsProbeHLT +
     process.goodPhotonProbesL1
     )
@@ -132,7 +134,7 @@ process.pho_sequence = cms.Sequence(
 ###################################################################
 
 process.allTagsAndProbes = cms.Sequence()
-process.allTagsAndProbes *= process.tagTightRECO
+process.allTagsAndProbes *= (process.goodDiEle + process.tagTightRECO)
 
 process.mc_sequence = cms.Sequence()
 
@@ -156,6 +158,7 @@ process.PhotonToRECO = cms.EDAnalyzer("TagProbeFitTreeProducer",
         #        passingIDMVA   = cms.InputTag("goodPhotonProbesIDMVA"),
         passingSel  = cms.InputTag("goodPhotonProbesSelection"),
         passingEleSel  = cms.InputTag("goodPhotonProbesEleSelection"),
+        passingEleVetoSel  = cms.InputTag("goodPhotonProbesEleVetoSelection"),
         ),                                               
                                       allProbes     = cms.InputTag("goodPhotonsProbeHLT"),
                                       )
