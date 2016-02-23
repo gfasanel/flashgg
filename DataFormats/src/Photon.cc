@@ -211,7 +211,7 @@ float const Photon::energyAtStep( std::string key, std::string fallback ) const
 }
 bool Photon::hasEnergyAtStep( std::string key ) const
 {
-    return hasUserData( key );
+    return hasUserFloat( key );
 }
 
 void Photon::updateEnergy( std::string key, float val )
@@ -247,6 +247,16 @@ void Photon::shiftSigmaEOverEValueBy( float val ) {
     const LorentzVector pho_p4 = p4(regression_type);
     float energyError = getCorrectedEnergyError(regression_type);
     setP4(regression_type, pho_p4, energyError*(1.+val), false);
+}
+
+
+//sigmaEOverE systematycs
+void Photon::smearSigmaEOverEValueBy( float val ) {
+    const LorentzVector pho_p4 = p4(regression_type);
+    float energyError = getCorrectedEnergyError(regression_type);
+    float energy = getCorrectedEnergy(regression_type);
+    energyError = sqrt( energyError*energyError + val*val*energy*energy );
+    setP4(regression_type, pho_p4, energyError, false);
 }
 
 

@@ -39,6 +39,11 @@ namespace flashgg {
 
         void writeInfoFromLastSelectionTo( flashgg::DiPhotonCandidate & ) override;
         void writeInfoFromLastSelectionTo( flashgg::PhotonJetCandidate & ) override;
+
+    private:
+        int bestVtx_;
+        std::vector<edm::Ptr<reco::Vertex> > vtxs_;
+        VertexCandidateMap vertexCandidateMap_;        
     };
 
     edm::Ptr<reco::Vertex> TracksMultiplicityVertexSelector::select( const edm::Ptr<flashgg::Photon> &g1,
@@ -53,8 +58,11 @@ namespace flashgg {
             //                                                      const float& beamsig
                                                        )
     {
+        vertexCandidateMap_ = vertexCandidateMap;
+        vtxs_ = vtxs;
+        
         int bestVtxSum=0;
-        int bestVtx=0;
+        bestVtx_=0;
         for( unsigned int iVtx=0; iVtx<vtxs.size(); ++iVtx ) {
             int thisVtxSum=0;
             auto mapRange = std::equal_range( vertexCandidateMap.begin(), vertexCandidateMap.end(), vtxs[iVtx], flashgg::compare_with_vtx() );
@@ -66,18 +74,18 @@ namespace flashgg {
             }
             if( thisVtxSum > bestVtxSum ) {
                 bestVtxSum = thisVtxSum;
-                bestVtx = iVtx;
+                bestVtx_ = iVtx;
             }
         }
 
-        return vtxs[bestVtx];
+        return vtxs[bestVtx_];
     }
 
     edm::Ptr<reco::Vertex> TracksMultiplicityVertexSelector::select( const edm::Ptr<flashgg::Photon> &g1,
-            const edm::Ptr<pat::Jet> &g2,
-            const std::vector<edm::Ptr<reco::Vertex> > &vtxs,
-            const VertexCandidateMap &vertexCandidateMap,
-            const std::vector<edm::Ptr<reco::Conversion> > &convs,
+                                                                     const edm::Ptr<pat::Jet> &g2,
+                                                                     const std::vector<edm::Ptr<reco::Vertex> > &vtxs,
+                                                                     const VertexCandidateMap &vertexCandidateMap,
+                                                                     const std::vector<edm::Ptr<reco::Conversion> > &convs,
             const std::vector<edm::Ptr<reco::Conversion> > &convsSingleLeg,
             const math::XYZPoint &beamSpot,
             bool
@@ -85,8 +93,11 @@ namespace flashgg {
             //                                                      const float& beamsig
                                                        )
     {
+        vertexCandidateMap_ = vertexCandidateMap;
+        vtxs_ = vtxs;
+        
         int bestVtxSum=0;
-        int bestVtx=0;
+        bestVtx_=0;
         for( unsigned int iVtx=0; iVtx<vtxs.size(); ++iVtx ) {
             int thisVtxSum=0;
             auto mapRange = std::equal_range( vertexCandidateMap.begin(), vertexCandidateMap.end(), vtxs[iVtx], flashgg::compare_with_vtx() );
@@ -98,23 +109,23 @@ namespace flashgg {
             }
             if( thisVtxSum > bestVtxSum ) {
                 bestVtxSum = thisVtxSum;
-                bestVtx = iVtx;
+                bestVtx_ = iVtx;
             }
         }
 
-        return vtxs[bestVtx];
+        return vtxs[bestVtx_];
     }
 
     void TracksMultiplicityVertexSelector::writeInfoFromLastSelectionTo( flashgg::DiPhotonCandidate &dipho )
     {
-        // No need to store anything if we're just taking the zeroth vertex
+        dipho.setVVtxPtr( vtxs_ );
+        dipho.computeVtxsExtras( vertexCandidateMap_ );
     }
 
     void TracksMultiplicityVertexSelector::writeInfoFromLastSelectionTo( flashgg::PhotonJetCandidate &phojet )
     {
         // No need to store anything if we're just taking the zeroth vertex
     }
-
 }
 
 DEFINE_EDM_PLUGIN( FlashggVertexSelectorFactory,
