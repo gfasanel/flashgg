@@ -7,8 +7,18 @@ ratio=1
 
 import os
 
-#pu_weights_file=TFile("pu_weights_0T.root")
-#pu_weights=pu_weights_file.Get("pu_weights")
+pu_weights_file=TFile("pu_weights_0T.root")
+pu_weights=pu_weights_file.Get("pu_weights")
+
+pu_reweight_string="("
+for i in range(1,pu_weights.GetSize()-3):
+   #bin1 means pu 0
+   pu_reweight_string+="(truePU=="+str(i-1)+")*"+str(pu_weights.GetBinContent(i))+" + "
+   
+pu_reweight_string+="(truePU=="+str(pu_weights.GetSize()-3)+")*"+str(pu_weights.GetBinContent(pu_weights.GetSize()-2))+" ) "
+
+print pu_reweight_string
+#pu_reweight_string="(1)"
 variables=['probe_Pho_sipip',
            'probe_Pho_sieie',
            'probe_Pho_nTrkSolidCone03',
@@ -30,14 +40,14 @@ variables=['probe_Pho_sipip',
            'truePU'
            ]
 
+#Just one variable to test
 #variables=['probe_Pho_sipip','probe_Pho_sieie'] #just to test one variable
 #variables=['probe_Pho_sieie']
 #variables=['probe_Pho_missingHits']
 #variables=['probe_Pho_full5x5x_r9','probe_Pho_nTrkSolidCone03']
 #variables=['mass'] #just to test one variable
-#variables=['event_nPV']
-variables=['truePU']
-
+#variables=['mass','event_nPV','probe_Pho_missingHits','probe_Pho_sieie','probe_Pho_sipip','probe_Pho_nTrkSolidCone03','probe_Pho_full5x5x_r9']
+variables=['probe_Pho_missingHits']
 
 hist={}
 hist['probe_Pho_sipip'          ]=dict(name='#sigma_{i#phi i#phi}'     ,unit=''     ,bins=100,xmin=0.,xmax=0.05) 
@@ -50,7 +60,7 @@ hist['probe_Pho_et'             ]=dict(name='probe_Pho_et'             ,unit='[G
 hist['probe_Pho_eta'            ]=dict(name='probe_Pho_eta'            ,unit=''     ,bins=100,xmin=-3,xmax=3) 
 hist['probe_Pho_full5x5x_r9'    ]=dict(name='probe_Pho_full5x5x_r9'    ,unit=''     ,bins=80,xmin=0.8,xmax=1) 
 hist['probe_Pho_hoe'            ]=dict(name='probe_Pho_hoe'            ,unit=''     ,bins=100,xmin=0.,xmax=0.1) 
-hist['probe_Pho_missingHits'    ]=dict(name='probe_Pho_missingHits'    ,unit=''     ,bins=5,xmin=0.,xmax=5) 
+hist['probe_Pho_missingHits'    ]=dict(name='probe_Pho_missingHits'    ,unit=''     ,bins=6,xmin=-1.,xmax=5) 
 hist['tag_Pho_abseta'           ]=dict(name='tag_Pho_abseta'           ,unit=''     ,bins=100,xmin=0.,xmax=3) 
 hist['tag_Pho_e'                ]=dict(name='tag_Pho_e'                ,unit='[GeV]',bins=100,xmin=0.,xmax=200) 
 hist['tag_Pho_et'               ]=dict(name='tag_Pho_et'               ,unit='[GeV]',bins=100,xmin=0.,xmax=200) 
@@ -65,7 +75,8 @@ file_MC=TFile('tp_ntuples/DYToEE_NNPDF30_powheg_76_v2.root')
 tree_MC=file_MC.Get("PhotonToRECO/fitter_tree")
 
 #file_data=TFile('tp_ntuples/SingleEle_0T_RunDv4.root')
-file_data=TFile('tp_ntuples/SingleEle_0T_RunD_76.root')
+#file_data=TFile('tp_ntuples/SingleEle_0T_RunD_76.root')
+file_data=TFile('tp_ntuples/SingleEle_0T_RunC_D_76.root')
 tree_data=file_data.Get('PhotonToRECO/fitter_tree')
 
 #Cuts####################################
@@ -95,8 +106,8 @@ selection_endcap=presel+"&&"+probe_endcap+"&&"+mass_cut
 selection_endcap_ele=presel+"&&"+selection_endcap+"&&"+ele_sel
 
 #sel_names=['bb','be','bb_ele','be_ele']
-#sel_names=['barrel','endcap','barrel_ele','endcap_ele']
-sel_names=['barrel_ele','endcap_ele']
+sel_names=['barrel','endcap','barrel_ele','endcap_ele']
+#sel_names=['barrel_ele','endcap_ele']
 selection={}
 ##########################################
 selection['bb']=selection_bb
@@ -121,16 +132,12 @@ y_factor['lin']=1.2
 y_factor['log']=10
 
 
-###My testing plots#######################
-print "Entries in MC are ",tree_MC.GetEntries()
-tree_MC.SetBranchAddress(
-
-
 for variable in variables:
    print "[INFO] Plotting ",variable
    for sel_name in sel_names:
       print "[INFO] Sel name ",sel_name 
       print "[INFO] Corresponding selection is ",selection[sel_name]
+      #print "[INFO] PU reweight is ", pu_reweight_string
       for y_scale in y_scales:
          canvas=TCanvas()
          scale=y_factor[y_scale]
@@ -151,14 +158,9 @@ for variable in variables:
          h_data=TH1F("h_data","h_data_"+selection[sel_name]+"_"+variable,hist[variable]['bins'],hist[variable]['xmin'],hist[variable]['xmax'])
          h_MC.Sumw2()
          h_data.Sumw2()
-         #if(variable=='PUweight'):
-         #   tree_MC.Draw("("+selection[sel_name]+"&&"+mass_cut+")*(PUweight)>>h_MC")
-         #   #tree_MC.Draw(selection[sel_name]+"&&"+mass_cut+">>h_MC")
-         #   canvas.SaveAs("~/scratch1/www/TP/76/data_MC/"+variable+"_"+sel_name+"_"+y_scale+".png")
-         #   sys.exit()            
-         #else:
          #tree_MC.Draw(variable+">>h_MC","("+selection[sel_name]+"&&"+mass_cut+")*(PUweight)")
-         tree_MC.Draw(variable+">>h_MC","("+selection[sel_name]+"&&"+mass_cut+")")
+         tree_MC.Draw(variable+">>h_MC","("+selection[sel_name]+"&&"+mass_cut+")*"+pu_reweight_string)
+         #tree_MC.Draw(variable+">>h_MC","("+selection[sel_name]+"&&"+mass_cut+")")
 
          #if sel_name in ('endcap','endcap_ele') :
             #tree_data.Draw(variable+">>h_data",selection[sel_name]+"&&"+extra_mass_cut) 
@@ -213,7 +215,7 @@ for variable in variables:
             ratioGraph.SetMarkerStyle(20);
             ratioGraph.SetMarkerSize(0.7);
             ratioGraph.Draw("AP");
-            ratioGraph.GetXaxis().SetRangeUser(h_MC.GetXaxis().GetXmin(),h_MC.GetXaxis().GetXmax());
+            ratioGraph.GetXaxis().SetLimits(h_MC.GetXaxis().GetXmin(),h_MC.GetXaxis().GetXmax());
       #ratioGraph.GetXaxis().SetTitle(mc.GetXaxis().GetTitle());
             ratioGraph.GetYaxis().SetTitle("Data/MC");
             ratioGraph.GetYaxis().SetTitleSize(sRatio.GetYaxis().GetTitleSize()*yscale);

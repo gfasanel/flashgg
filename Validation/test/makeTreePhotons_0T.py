@@ -19,11 +19,18 @@ varOptions.parseArguments()
 
 options['HLTProcessName']        = "HLT"
 
+#photonID_0T = """
+#(
+#( isEB && full5x5_sigmaIetaIeta < 1.05e-2 && sqrt(sipip)< 1.05e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 ) 
+#||
+#( isEE && full5x5_sigmaIetaIeta < 2.8e-2 && sqrt(sipip)< 2.6e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 )
+#)
+#"""
 photonID_0T = """
 (
-( isEB && full5x5_sigmaIetaIeta < 1.05e-2 && sqrt(sipip)< 1.05e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 ) 
+( isEB && full5x5_sigmaIetaIeta < 1.06e-2 && sqrt(sipip)< 1.06e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3.6 ) 
 ||
-( isEE && full5x5_sigmaIetaIeta < 2.8e-2 && sqrt(sipip)< 2.6e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3 )
+( isEE && full5x5_sigmaIetaIeta < 2.8e-2 && sqrt(sipip)< 2.8e-2 && nTrkSolidConeDR03 < 4  && egPhotonIso<3.6 )
 )
 """
 
